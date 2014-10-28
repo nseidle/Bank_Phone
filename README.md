@@ -1,21 +1,17 @@
-SparkFun MG2639 Cellular Shield
+Bank Phone
 =========================
 
-[![SparkFun MG2639 Cellular Shield](https://github.com/sparkfun/SparkFun-MG2639-Cellular-Shield/blob/88eb285879021d54828d13c734865cc6500bc2bf/Board%20Layout.png)](https://raw.githubusercontent.com/sparkfun/SparkFun-MG2639-Cellular-Shield/88eb285879021d54828d13c734865cc6500bc2bf/Board%20Layout.png?token=117102__eyJzY29wZSI6IlJhd0Jsb2I6c3BhcmtmdW4vU3BhcmtGdW4tTUcyNjM5LUNlbGx1bGFyLVNoaWVsZC84OGViMjg1ODc5MDIxZDU0ODI4ZDEzYzczNDg2NWNjNjUwMGJjMmJmL0JvYXJkIExheW91dC5wbmciLCJleHBpcmVzIjoxNDEzMjA3ODExfQ%3D%3D--2cf12303dcbe55c20f8917d72f3ada013677ca8e)
+[![Bank Phone Layout](https://github.com/nseidle/Bank_Phone/Board%20Layout.png)](phone image)
 
-The SparkFun MG2639 Cellular shield is an Arduino compatible shield that gives the user access to the MG2639_V3 GSM+GPS module. The module is capable of accquiring a GPS location as well as communication with GSM networks all over the world. Phonecalls can be made, texts sent, and data pushed to and read from web pages. All the supporting circuitry is provided including translation from 2.8V of the module to a user selectable 3.3V or 5V.
+The WOW Kid's museum wanted a rotary phone that automatically played a random track when a kid picked up the handset. If they dialed a number it would play the track associated with that number.
 
-The main interface is two software serial ports.
-
-Power can be provided either from the Arduino board's VIN or from an external battery such as a lithium polymer.
+10 kid-friendly audio tracks (plus a 'ring ring' track) are loaded onto the microSD card. Power is provided from a 5V wall wart. The phone is screwed to a desk. I may have to glue the handset cable to the phone if it becomes an issue.
 
 Repository Contents
 -------------------
 
-* **firmware** - Contains the various example sketches to check network registration, send text messages, and post to the [SparkFun data channel](http://data.sparkfun.com).
-* **hardware** - Schematic and PCB layout for the shield.
-* **datasheets** - The AT command set, hardware guide, and various other datasheets.
-* **library** - An eagle library containing the various custom footprints for this shield. Specifically the MG2639 footprint.
+* **firmware** - Contains the firmware that runs the phone
+* **hardware** - Schematic and PCB layout for the shield that connects the dial and hook
 
 License Information
 -------------------
