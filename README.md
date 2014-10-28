@@ -1,7 +1,7 @@
 Bank Phone
 =========================
 
-[![Bank Phone Layout](https://github.com/nseidle/Bank_Phone/Board%20Layout.png)](phone image)
+[![Bank Phone Layout](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank%20Phone%20Layout.png)](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank%20Phone%20Layout.png)
 
 The WOW Kid's museum wanted a rotary phone that automatically played a random track when a kid picked up the handset. If they dialed a number it would play the track associated with that number.
 
