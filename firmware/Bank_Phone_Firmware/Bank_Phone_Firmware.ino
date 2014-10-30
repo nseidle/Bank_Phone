@@ -18,8 +18,11 @@
  
  The other side of the dial return, dial, and hook need to be connected to ground.
  
- 10 tracks need to be loaded onto the SD card named TRACK000.WAV, TRACK001.WAV, etc.
- A "TRACK012.WAV" is needed - it is the ring ring track.
+ 10 tracks need to be loaded onto the SD card named 0.WAV, 1.WAV, etc.
+ A "12.WAV" is needed - it is the ring ring track.
+ 
+ WAV files need to be at 700-800kbps. Anything greater will play back oddly.
+ 
  */
 
 #include <SPI.h>           // SPI library
@@ -41,17 +44,26 @@ int previousTrack2 = 2;
 
 byte dialReturn = 4; //Goes to VCC when a person starts dialing
 byte dial = 5; //Opens/closes every time a number goes by
-byte hook = 6; //Goes to VCC when person picks up the phone
+byte hook = 3; //Goes to VCC when person picks up the phone
 
 byte statLED = 13;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
+#define ON_HOOK  0
+#define PLAY_RING 1
+#define DIALING 2
+#define PLAY_TRACK 3
+#define DEAD_AIR 4
+#define RING  12
+
+byte state = ON_HOOK; //Keeps track of where we are at
+
 void setup()
 {
   Serial.begin(9600);
   Serial.println("Bank phone");
-  
+
   pinMode(A0, INPUT); //Just for a second so we can see the random generator
   randomSeed(analogRead(0)); //For picking random audio tracks
 
@@ -65,12 +77,17 @@ void setup()
 
   initSD(); // Initialize the SD card
   initMP3Player(); // Initialize the MP3 Shield
-  
+
   Serial.println("Phone online!");
+
+  //tell the MP3 Shield to play a track
+  //MP3player.playTrack(4);
 }
 
 void loop()
 {
+  byte PhoneNumber = 0;
+
   //Each second make a reading of cell voltages
   //And blink the status LED
   if(millis() - lastTime > 1000)
@@ -80,27 +97,112 @@ void loop()
       digitalWrite(statLED, LOW);
     else
       digitalWrite(statLED, HIGH);    
-    
+
     lastTime = millis();
   }
-  
-  while(offHook() == true)
+
+  if(state == ON_HOOK)
+  {
+    if(offHook() == true)
+    {
+      //Start playing the ring
+      playTrack(RING);
+      state = PLAY_RING;
+    }
+  }
+  else if(state == PLAY_RING)
+  {
+    if(offHook() == false)
+    {
+      stopPlaying();
+      state = ON_HOOK;
+    }
+    else if(user_is_dialing() == true)
+    {
+      stopPlaying(); //Stop playing the ring thing
+      state = DIALING;
+    }
+    else if(!MP3player.isPlaying()) //If we are done playing ring then go to Play Track (random)
+    {
+      playTrack(99); //This will play a random track
+      state = PLAY_TRACK;
+    }
+  }
+  else if(state == PLAY_TRACK)
+  {
+    if(offHook() == false)
+    {
+      stopPlaying();
+      state = ON_HOOK;
+    }
+    else if(user_is_dialing() == true)
+    {
+      stopPlaying(); //Stop playing the ring thing
+      state = DIALING;
+    }
+    else if(!MP3player.isPlaying()) //If we're done playing, goto dead air
+    {
+      state = DEAD_AIR;
+    }
+  }
+  else if(state == DIALING)
+  {
+    if(MP3player.isPlaying()) //If we're done playing, goto dead air
+    {
+      Serial.println("We are already playing a track!");
+    }
+
+    PhoneNumber = calcNumber(5000); //Get what the user is doing
+    if(PhoneNumber == -1) //User hung up
+    {
+      state = ON_HOOK;
+    }
+    else
+    {
+      playTrack(PhoneNumber);
+      state = PLAY_TRACK;
+    }
+  }
+  else if(state == DEAD_AIR)
+  {
+    if(offHook() == false)
+    {
+      state = ON_HOOK;
+    }
+    else if(user_is_dialing() == true)
+    {
+      state = DIALING;
+    }
+  }
+
+  Serial.print("State: ");
+  if(state == ON_HOOK) Serial.print("On Hook");
+  if(state == PLAY_RING) Serial.print("Play Ring");
+  if(state == DIALING) Serial.print("Dialing");
+  if(state == PLAY_TRACK) Serial.print("Play Track");
+  if(state == DEAD_AIR) Serial.print("Dead Air");
+
+  Serial.println();
+
+  /*while(offHook() == true)
   {
     Serial.println("Off hook!");
-    
-    playTrack(12); //Play ring ring track
-    
+
+    //Play ring track twice
+    playTrack(12);
+    playTrack(12);
+
     playTrack(11); //Then pick a random track to play. 11 is the special signal to pick random.
-    
+
     //If user starts dialing, play the track that they just dialed
     byte number = calcNumber(5000); //Wait 5 seconds before giving up
-    
+
     if(number >= 0)
     {
       //Play that track!
       Serial.print("Playing track: ");
       Serial.println(number);
-      
+
       playTrack(number);
     }
     else
@@ -109,21 +211,26 @@ void loop()
       if(number == -2) Serial.println("Timeout");
     }
   }
+
+  Serial.println("On hook");*/
   
-  Serial.println("On hook");
   delay(250);
 }
 
+void stopPlaying()
+{
+  if(MP3player.isPlaying()) MP3player.stopTrack(); //Stop any previous track
+}
 //Plays a given track
-//11 will get you a random track between 0 and 10
 //12 will get you the brrring brrring track
+//99 will get you a random track between 0 and 10
 //Returns if user hangs up the phone or starts dialing
 void playTrack(int trackNumber)
 {
   char track_name[13];
 
   //Check to see if we need to play a random track
-  if(trackNumber == 11)
+  if(trackNumber == 99)
   {
     trackNumber = previousTrack1;
 
@@ -137,22 +244,32 @@ void playTrack(int trackNumber)
     previousTrack1 = trackNumber;
   }
 
-  sprintf(track_name, "TRACK%03d.WAV", trackNumber); //Splice the track number into file name
+  sprintf(track_name, "%d.WAV", trackNumber); //Splice the track number into file name
 
-  //Serial.print("Playing: ");
-  //Serial.println(track_name);
+  Serial.print("Playing: ");
+  Serial.println(track_name);
 
   if(MP3player.isPlaying()) MP3player.stopTrack(); //Stop any previous track
 
-  //Not sure how long these functions take
+    //Not sure how long these functions take
   MP3player.begin();
-  MP3player.playMP3(track_name);
+  int result = MP3player.playMP3(track_name);
+
+  //check result, see readme for error codes.
+  if(result != 0) {
+    Serial.print(F("Error code: "));
+    Serial.print(result);
+    Serial.println(F(" when trying to play track"));
+  } 
 
   while(MP3player.isPlaying())
   {
+    Serial.print("^");
     if(offHook() == false) break;
     if(user_is_dialing() == true) break;
+    delay(50);
   }
+  Serial.println();
 
   if(MP3player.isPlaying()) MP3player.stopTrack(); //Stop any track that might be playing
 }
@@ -160,12 +277,8 @@ void playTrack(int trackNumber)
 // initSD() initializes the SD card and checks for an error.
 void initSD()
 {
-  //Initialize the SdCard.
-  if(!sd.begin(SD_SEL, SPI_HALF_SPEED))
-    sd.initErrorHalt();
-
-  //if(!sd.chdir("/")) 
-  //  sd.errorHalt("sd.chdir");
+  if(!sd.begin(SD_SEL, SPI_HALF_SPEED)) sd.initErrorHalt();
+  if(!sd.chdir("/")) sd.errorHalt("sd.chdir");
 }
 
 // initMP3Player() sets up all of the initialization for the
@@ -178,13 +291,14 @@ void initMP3Player()
   if(result != 0) // check result, see readme for error codes.
   {
     // Error checking can go here!
-    Serial.println("There's an MP3 error!");
+    Serial.print("MP3 error: ");
+    Serial.println(result);
   }
 
   //Not sure what the handset will need
-  MP3player.setVolume(10, 10); // MP3 Player volume 0=max, 255=lowest (off)
+  //MP3player.setVolume(10, 10); // MP3 Player volume 0=max, 255=lowest (off)
 
-  MP3player.setMonoMode(1); // Mono setting: 0=off, 1 = on, 3=max
+  //MP3player.setMonoMode(0); // Mono setting: 0=off, 1 = on, 3=max
 }
 
 //Returns the number that the user dialed
@@ -194,53 +308,55 @@ void initMP3Player()
 int calcNumber(int maxWait)
 {
   byte numberDialed = 0;
-  
+
   byte debounce_pause = 10; //We need to give some time for the paddle to truely close
-  
+
   Serial.println("Waiting for user to use dial");
 
+  maxWait /= 10;
   while(user_is_dialing() == false)
   {
     Serial.print("$");
-    
+
     //Wait for user to start dialing
-    delay(1);
+    delay(10);
     maxWait--;
     if(maxWait == 0) return(-2); //Over time error
+    if(offHook() == false) return(-1); //Have you hung up?
   }
-  
+
   Serial.println("Starting to count");
-  
+
   //This loop counts the number of high/low transitions of the dial paddle
   while(user_is_dialing() == true)
   {
     //State machine that steps through the opening and closing of the paddle
-    
-    while(digitalRead(dial) == HIGH)
+
+      while(digitalRead(dial) == HIGH)
     {
       if(user_is_dialing() == false) break; //Has the dial returned to home?
 
       if(offHook() == false) return(-1); //Have you hung up?
     }
-    
+
     delay(debounce_pause);
-    
+
     while(digitalRead(dial) == LOW)
     {
       if(user_is_dialing() == false) break; //Has the dial returned to home?
 
       if(offHook() == false) return(-1); //Have you hung up?
     }
-    
+
     delay(debounce_pause);
-    
+
     Serial.print(".");
     numberDialed++;
   }
   Serial.println();
-  
+
   numberDialed--; //There is an extra paddle closure every time
-  
+
   if(numberDialed == 10) numberDialed = 0; //Correct for the zero
 
   return(numberDialed);  
@@ -251,7 +367,7 @@ int calcNumber(int maxWait)
 boolean user_is_dialing()
 {
   if(digitalRead(dialReturn) == LOW) return(true);
-  
+
   return(false);  
 }
 
@@ -262,4 +378,6 @@ boolean offHook(void)
 
   return(false);
 }
+
+
 
