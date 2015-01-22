@@ -14,7 +14,7 @@
  
  Arduino pin 4 -> One side of the dial return
  5 -> One side of the dial
- 6 -> One side of the hook
+ 3 -> One side of the hook
  
  The other side of the dial return, dial, and hook need to be connected to ground.
  
@@ -22,6 +22,10 @@
  A "12.WAV" is needed - it is the ring ring track.
  
  WAV files need to be at 700-800kbps. Anything greater will play back oddly.
+ 
+ A Stereo WAV sounds really funky and slow.
+ 
+ This code requires the SD lib from Bill Greiman: https://github.com/greiman/SdFat
  
  */
 
@@ -57,11 +61,14 @@ byte statLED = 13;
 #define DEAD_AIR 4
 #define RING  12
 
+#define MAIN_VOLUME 5
+#define HIGH_VOLUME 0
+
 byte state = ON_HOOK; //Keeps track of where we are at
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Bank phone");
 
   pinMode(A0, INPUT); //Just for a second so we can see the random generator
@@ -99,6 +106,20 @@ void loop()
       digitalWrite(statLED, HIGH);    
 
     lastTime = millis();
+
+    //Print system state every second
+    //We don't want to print it every loop because dialing can happen quickly
+    //and we don't want to miss it
+
+    Serial.print("State: ");
+    if(state == ON_HOOK) Serial.print("On Hook");
+    if(state == PLAY_RING) Serial.print("Play Ring");
+    if(state == DIALING) Serial.print("Dialing");
+    if(state == PLAY_TRACK) Serial.print("Play Track");
+    if(state == DEAD_AIR) Serial.print("Dead Air");
+
+    Serial.println();
+
   }
 
   if(state == ON_HOOK)
@@ -174,47 +195,9 @@ void loop()
       state = DIALING;
     }
   }
-
-  Serial.print("State: ");
-  if(state == ON_HOOK) Serial.print("On Hook");
-  if(state == PLAY_RING) Serial.print("Play Ring");
-  if(state == DIALING) Serial.print("Dialing");
-  if(state == PLAY_TRACK) Serial.print("Play Track");
-  if(state == DEAD_AIR) Serial.print("Dead Air");
-
-  Serial.println();
-
-  /*while(offHook() == true)
-  {
-    Serial.println("Off hook!");
-
-    //Play ring track twice
-    playTrack(12);
-    playTrack(12);
-
-    playTrack(11); //Then pick a random track to play. 11 is the special signal to pick random.
-
-    //If user starts dialing, play the track that they just dialed
-    byte number = calcNumber(5000); //Wait 5 seconds before giving up
-
-    if(number >= 0)
-    {
-      //Play that track!
-      Serial.print("Playing track: ");
-      Serial.println(number);
-
-      playTrack(number);
-    }
-    else
-    {
-      if(number == -1) Serial.println("Hangup");
-      if(number == -2) Serial.println("Timeout");
-    }
-  }
-
-  Serial.println("On hook");*/
   
-  delay(250);
+  
+  delay(20);
 }
 
 void stopPlaying()
@@ -243,6 +226,9 @@ void playTrack(int trackNumber)
     previousTrack2 = previousTrack1;
     previousTrack1 = trackNumber;
   }
+  
+  //Increase the volume for the brrrrring brrrrrring track
+  if(trackNumber == 12) MP3player.setVolume(HIGH_VOLUME, HIGH_VOLUME); // MP3 Player volume 0=max, 255=lowest (off)
 
   sprintf(track_name, "%d.WAV", trackNumber); //Splice the track number into file name
 
@@ -271,6 +257,9 @@ void playTrack(int trackNumber)
   }
   Serial.println();
 
+  //Return volume to normal after brrrrring brrrrrring track
+  if(trackNumber == 12) MP3player.setVolume(MAIN_VOLUME, MAIN_VOLUME); // MP3 Player volume 0=max, 255=lowest (off)
+
   if(MP3player.isPlaying()) MP3player.stopTrack(); //Stop any track that might be playing
 }
 
@@ -296,9 +285,9 @@ void initMP3Player()
   }
 
   //Not sure what the handset will need
-  //MP3player.setVolume(10, 10); // MP3 Player volume 0=max, 255=lowest (off)
+  MP3player.setVolume(MAIN_VOLUME, MAIN_VOLUME); // MP3 Player volume 0=max, 255=lowest (off)
 
-  //MP3player.setMonoMode(0); // Mono setting: 0=off, 1 = on, 3=max
+  MP3player.setMonoMode(1); // Mono setting: 0=off, 1 = on, 3=max
 }
 
 //Returns the number that the user dialed
@@ -309,9 +298,11 @@ int calcNumber(int maxWait)
 {
   byte numberDialed = 0;
 
-  byte debounce_pause = 10; //We need to give some time for the paddle to truely close
+  byte debounce_pause = 25; //10; //We need to give some time for the paddle to truely close
 
-  Serial.println("Waiting for user to use dial");
+  //These long print statements cause problems if user dials quickly
+  //Limit them or increase serial speed
+  //Serial.println("Waiting for user to use dial"); //Removed so that we don't miss quick dialing
 
   maxWait /= 10;
   while(user_is_dialing() == false)
@@ -325,7 +316,7 @@ int calcNumber(int maxWait)
     if(offHook() == false) return(-1); //Have you hung up?
   }
 
-  Serial.println("Starting to count");
+  //Serial.println("Starting to count"); //Removed so that we don't miss quick dialing
 
   //This loop counts the number of high/low transitions of the dial paddle
   while(user_is_dialing() == true)
@@ -368,7 +359,7 @@ boolean user_is_dialing()
 {
   if(digitalRead(dialReturn) == LOW) return(true);
 
-  return(false);  
+  return(false);
 }
 
 //Returns true if user picks up the handset
@@ -378,6 +369,4 @@ boolean offHook(void)
 
   return(false);
 }
-
-
 
