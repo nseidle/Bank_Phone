@@ -7,6 +7,8 @@ The WOW Kid's museum wanted a rotary phone that automatically played a random tr
 
 10 kid-friendly audio tracks (plus a 'ring ring' track) are loaded onto the microSD card. Power is provided from a 5V wall wart. The phone is screwed to a desk. I may have to glue the handset cable to the phone if it becomes an issue.
 
+The audio tracks must be converted to mono for this project. Use http://audio.online-convert.com/convert-to-wav to convert to mono.
+
 Repository Contents
 -------------------
 
