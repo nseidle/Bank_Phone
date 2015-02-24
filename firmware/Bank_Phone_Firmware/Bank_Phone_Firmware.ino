@@ -33,6 +33,7 @@
 #include <SdFat.h>         // SDFat Library
 #include <SdFatUtil.h>     // SDFat Util Library
 #include <SFEMP3Shield.h>  // Mp3 Shield Library
+#include <avr/wdt.h> //We need watch dog for this program
 
 SdFat sd; // Create object to handle SD functions
 
@@ -68,6 +69,9 @@ byte state = ON_HOOK; //Keeps track of where we are at
 
 void setup()
 {
+  wdt_reset(); //Pet the dog
+  wdt_disable(); //We don't want the watchdog during init
+
   Serial.begin(115200);
   Serial.println("Bank phone");
 
@@ -89,10 +93,16 @@ void setup()
 
   //tell the MP3 Shield to play a track
   //MP3player.playTrack(4);
+
+  wdt_reset(); //Pet the dog
+//  wdt_enable(WDTO_250MS); //Unleash the beast - too short
+  wdt_enable(WDTO_1S); //Unleash the beast
 }
 
 void loop()
 {
+  wdt_reset(); //Pet the dog
+
   byte PhoneNumber = 0;
 
   //Each second make a reading of cell voltages
@@ -237,9 +247,11 @@ void playTrack(int trackNumber)
 
   if(MP3player.isPlaying()) MP3player.stopTrack(); //Stop any previous track
 
-    //Not sure how long these functions take
-  MP3player.begin();
-  int result = MP3player.playMP3(track_name);
+  //Not sure how long these functions take
+  wdt_reset(); //Pet the dog
+  MP3player.begin(); //This takes longer than 250ms
+  wdt_reset(); //Pet the dog
+  int result = MP3player.playMP3(track_name); //This takes more than 250ms
 
   //check result, see readme for error codes.
   if(result != 0) {
@@ -253,6 +265,8 @@ void playTrack(int trackNumber)
     Serial.print("^");
     if(offHook() == false) break;
     if(user_is_dialing() == true) break;
+
+    wdt_reset(); //Pet the dog
     delay(50);
   }
   Serial.println();
@@ -276,6 +290,7 @@ void initSD()
 // stero mode.
 void initMP3Player()
 {
+  
   uint8_t result = MP3player.begin(); // init the mp3 player shield
   if(result != 0) // check result, see readme for error codes.
   {
@@ -310,7 +325,9 @@ int calcNumber(int maxWait)
     Serial.print("$");
 
     //Wait for user to start dialing
+    wdt_reset(); //Pet the dog
     delay(10);
+
     maxWait--;
     if(maxWait == 0) return(-2); //Over time error
     if(offHook() == false) return(-1); //Have you hung up?
@@ -323,13 +340,14 @@ int calcNumber(int maxWait)
   {
     //State machine that steps through the opening and closing of the paddle
 
-      while(digitalRead(dial) == HIGH)
+    while(digitalRead(dial) == HIGH)
     {
       if(user_is_dialing() == false) break; //Has the dial returned to home?
 
       if(offHook() == false) return(-1); //Have you hung up?
     }
 
+    wdt_reset(); //Pet the dog
     delay(debounce_pause);
 
     while(digitalRead(dial) == LOW)
@@ -339,6 +357,7 @@ int calcNumber(int maxWait)
       if(offHook() == false) return(-1); //Have you hung up?
     }
 
+    wdt_reset(); //Pet the dog
     delay(debounce_pause);
 
     Serial.print(".");
