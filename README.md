@@ -11,7 +11,7 @@ The WOW Kid's museum wanted a rotary phone that automatically played a random tr
 
 ![Cracked Handset](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Cracked-Handset.jpg)
 
-This is bakelite! And yet 32,000 hands a month managed to destroy the handset. The replacement has been working well for over 2 years.
+This is [bakelite](https://en.wikipedia.org/wiki/Bakelite)! And yet 32,000 hands a month managed to destroy the handset. The replacement has been working well for over 2 years.
 
 **Note:** The audio tracks must be converted to mono for this project. Use http://audio.online-convert.com/convert-to-wav to convert to mono.
 
