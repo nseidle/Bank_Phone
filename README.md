@@ -3,13 +3,17 @@ Bank Phone
 
 Bank Phone is an interactive exhibit at the [WOW kid's museum](http://www.wowchildrensmuseum.org/) in Lafayette, CO. When the user picks up the phone they hear a classic 'ring' tone, then one of 10 random tracks in English and Spanish. Dialing the dial causes that particular track (0 to 9) play.
 
-[![Bank Phone Installed](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank-Phone.jpg)]
+[Bank Phone Installed](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank-Phone.jpg)
 
 The WOW Kid's museum wanted a rotary phone that automatically played a random track when a kid picked up the handset. If they dialed a number it would play the track associated with that number.
 
-10 kid-friendly audio tracks (plus a 'ring ring' track) are loaded onto the microSD card. Power is provided from a 5V wall wart. The phone is screwed to a desk. I may have to glue the handset cable to the phone if it becomes an issue.
+10 kid-friendly audio tracks (plus a 'ring ring' track) are loaded onto the microSD card. Power is provided from a 5V wall wart. The phone is screwed to a desk. 
 
-The audio tracks must be converted to mono for this project. Use http://audio.online-convert.com/convert-to-wav to convert to mono.
+[Cracked Handset](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Cracked-Handset.jpg)
+
+This is bakelite! And yet 32,000 hands a month managed to destroy the handset. The replacement has been working well for over 2 years.
+
+**Note:** The audio tracks must be converted to mono for this project. Use http://audio.online-convert.com/convert-to-wav to convert to mono.
 
 [![Bank Phone Layout](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank%20Phone%20Layout.png)](https://raw.githubusercontent.com/nseidle/Bank_Phone/master/Bank%20Phone%20Layout.png)
 
